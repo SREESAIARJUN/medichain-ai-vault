@@ -4,51 +4,15 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { SendHorizontal, Brain, User } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { SendHorizontal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import { ChatMessage } from "@/components/chat/ChatMessage";
+import { ChatTypingIndicator } from "@/components/chat/ChatTypingIndicator";
 
-// Mock API call - in production, replace with actual Gemini API call
-const callGeminiAPI = async (prompt: string): Promise<string> => {
-  // This is a placeholder for the actual API call
-  console.log("Calling Gemini API with prompt:", prompt);
-  
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-  
-  // Simulated response for development purposes
-  if (prompt.toLowerCase().includes("headache") || prompt.toLowerCase().includes("pain")) {
-    return JSON.stringify({
-      diagnosis: "Possible Tension Headache",
-      causes: [
-        "Stress and anxiety",
-        "Poor posture",
-        "Dehydration",
-        "Eye strain",
-        "Lack of sleep"
-      ],
-      suggestions: [
-        "Rest in a quiet, dark room",
-        "Apply a cold or warm compress to your head",
-        "Stay hydrated",
-        "Consider over-the-counter pain relievers like ibuprofen",
-        "Practice stress reduction techniques"
-      ],
-      risk_level: "Low",
-      followup_needed: false,
-      additional_notes: "If headaches persist for more than 3 days or increase in severity, please consult a healthcare professional."
-    });
-  } else {
-    return JSON.stringify({
-      diagnosis: "Insufficient Information",
-      causes: ["Unable to determine with provided symptoms"],
-      suggestions: ["Please provide more detailed symptoms", "Consider tracking when symptoms occur"],
-      risk_level: "Undetermined",
-      followup_needed: true,
-      additional_notes: "For accurate diagnosis, please provide specific symptoms including duration, intensity, and any triggers."
-    });
-  }
-};
+// Import from utils instead of redefining
+import { callGeminiAPI } from "@/utils/gemini";
 
 interface Message {
   id: string;
@@ -110,30 +74,29 @@ const Chat = () => {
       const response = await callGeminiAPI(prompt);
       
       try {
-        const parsedResponse = JSON.parse(response);
-        setDiagnosisResult(parsedResponse);
+        setDiagnosisResult(response);
         
         // Format the response for display in the chat
-        let formattedContent = `**${parsedResponse.diagnosis}**\n\n`;
+        let formattedContent = `**${response.diagnosis}**\n\n`;
         
-        if (parsedResponse.causes.length > 0) {
+        if (response.causes.length > 0) {
           formattedContent += "**Possible Causes:**\n";
-          parsedResponse.causes.forEach((cause: string) => {
+          response.causes.forEach((cause: string) => {
             formattedContent += `- ${cause}\n`;
           });
           formattedContent += "\n";
         }
         
-        if (parsedResponse.suggestions.length > 0) {
+        if (response.suggestions.length > 0) {
           formattedContent += "**Suggestions:**\n";
-          parsedResponse.suggestions.forEach((suggestion: string) => {
+          response.suggestions.forEach((suggestion: string) => {
             formattedContent += `- ${suggestion}\n`;
           });
           formattedContent += "\n";
         }
         
-        formattedContent += `**Risk Level:** ${parsedResponse.risk_level}\n\n`;
-        formattedContent += parsedResponse.additional_notes;
+        formattedContent += `**Risk Level:** ${response.risk_level}\n\n`;
+        formattedContent += response.additional_notes;
         
         const aiMessage = {
           id: (Date.now() + 1).toString(),
@@ -196,65 +159,24 @@ const Chat = () => {
 
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex-1">
-            <Card className="glass-card h-[500px] flex flex-col">
-              <CardContent className="flex-1 flex flex-col p-4">
-                <div className="flex-1 overflow-y-auto mb-4">
-                  <div className="space-y-4 pb-2">
+            <Card className="glass-card h-[500px] flex flex-col overflow-hidden">
+              <CardContent className="flex-1 flex flex-col p-4 h-full">
+                <ScrollArea className="flex-1 pr-4 mb-4">
+                  <div className="space-y-1 pb-2">
                     {messages.map((message) => (
-                      <div
+                      <ChatMessage 
                         key={message.id}
-                        className={`flex ${
-                          message.role === "assistant" ? "justify-start" : "justify-end"
-                        }`}
-                      >
-                        <div
-                          className={`max-w-[80%] rounded-xl p-4 ${
-                            message.role === "assistant"
-                              ? "bg-muted text-foreground"
-                              : "bg-primary text-primary-foreground"
-                          }`}
-                        >
-                          <div className="flex items-center space-x-2 mb-2">
-                            {message.role === "assistant" ? (
-                              <>
-                                <Brain className="h-4 w-4" />
-                                <span className="font-semibold">MediChain AI</span>
-                              </>
-                            ) : (
-                              <>
-                                <User className="h-4 w-4" />
-                                <span className="font-semibold">You</span>
-                              </>
-                            )}
-                          </div>
-                          <div className="prose dark:prose-invert prose-sm whitespace-pre-wrap">
-                            {message.content.split('\n').map((line, i) => (
-                              <p key={i} className="mb-1">{line}</p>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
+                        id={message.id}
+                        role={message.role}
+                        content={message.content}
+                      />
                     ))}
-                    {isLoading && (
-                      <div className="flex justify-start">
-                        <div className="max-w-[80%] rounded-xl p-4 bg-muted text-foreground">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <Brain className="h-4 w-4" />
-                            <span className="font-semibold">MediChain AI</span>
-                          </div>
-                          <div className="flex space-x-2 mt-2">
-                            <div className="w-2 h-2 rounded-full bg-primary animate-typing-dot" style={{ animationDelay: "0ms" }} />
-                            <div className="w-2 h-2 rounded-full bg-primary animate-typing-dot" style={{ animationDelay: "300ms" }} />
-                            <div className="w-2 h-2 rounded-full bg-primary animate-typing-dot" style={{ animationDelay: "600ms" }} />
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    {isLoading && <ChatTypingIndicator />}
                     <div ref={messagesEndRef} />
                   </div>
-                </div>
+                </ScrollArea>
 
-                <form onSubmit={handleSubmit} className="flex space-x-2">
+                <form onSubmit={handleSubmit} className="flex space-x-2 pt-2 border-t">
                   <Input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
@@ -262,7 +184,11 @@ const Chat = () => {
                     className="flex-1"
                     disabled={isLoading}
                   />
-                  <Button type="submit" disabled={isLoading || !input.trim()}>
+                  <Button 
+                    type="submit" 
+                    disabled={isLoading || !input.trim()}
+                    className="transition-all hover:scale-105"
+                  >
                     <SendHorizontal className="h-5 w-5" />
                     <span className="sr-only">Send</span>
                   </Button>
@@ -272,7 +198,7 @@ const Chat = () => {
           </div>
 
           <div className="md:w-1/3">
-            <Card className="glass-card">
+            <Card className="glass-card h-full">
               <CardContent className="p-6">
                 <h3 className="font-semibold text-lg mb-4">Next Steps</h3>
                 
@@ -283,19 +209,19 @@ const Chat = () => {
                   
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-center">
-                      <div className="rounded-full bg-medical-blue/20 p-1 mr-2">
+                      <div className="rounded-full bg-primary/20 p-1 mr-2">
                         <span className="text-xs font-bold">1</span>
                       </div>
                       Review your complete diagnosis
                     </li>
                     <li className="flex items-center">
-                      <div className="rounded-full bg-medical-blue/20 p-1 mr-2">
+                      <div className="rounded-full bg-primary/20 p-1 mr-2">
                         <span className="text-xs font-bold">2</span>
                       </div>
                       Encrypt and store it on IPFS
                     </li>
                     <li className="flex items-center">
-                      <div className="rounded-full bg-medical-blue/20 p-1 mr-2">
+                      <div className="rounded-full bg-primary/20 p-1 mr-2">
                         <span className="text-xs font-bold">3</span>
                       </div>
                       Mint as NFT on Aptos blockchain
@@ -305,7 +231,7 @@ const Chat = () => {
                   <div className="pt-4">
                     <Button 
                       asChild 
-                      className="w-full" 
+                      className="w-full transition-all hover:scale-105" 
                       disabled={!diagnosisResult}
                     >
                       <Link to={{
