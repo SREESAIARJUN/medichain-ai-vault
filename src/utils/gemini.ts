@@ -1,5 +1,5 @@
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
 
 export interface DiagnosisResult {
   diagnosis: string;
@@ -15,7 +15,7 @@ const apiKey = "AIzaSyAZn35XN5nxjiW0COUFJqG5HjNhnnnO79M";
 const genAI = new GoogleGenerativeAI(apiKey);
 
 const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-pro-latest",
+  model: "gemini-1.5-pro",  // Using stable model name
   systemInstruction: `
 You are a medical diagnosis assistant. Based on the symptoms provided by the user, your job is to:
 
