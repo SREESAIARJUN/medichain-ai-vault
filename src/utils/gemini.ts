@@ -1,129 +1,102 @@
-
-/**
- * Gemini API Client
- * 
- * This file contains a client for interacting with Google's Gemini API
- * In this implementation, we're using mock functions for demonstration purposes.
- * In a production environment, you would implement actual API calls to Gemini.
- */
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 interface DiagnosisResult {
   diagnosis: string;
   causes: string[];
   suggestions: string[];
-  risk_level: string;
+  risk_level: "Low" | "Medium" | "High" | "Undetermined";
   followup_needed: boolean;
   additional_notes: string;
 }
 
-// Mock Gemini API call
-export const callGeminiAPI = async (prompt: string): Promise<DiagnosisResult> => {
-  console.log("Calling Gemini API with prompt:", prompt);
-  
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-  
-  // Simulated response for development purposes
-  // In production, this would make an actual API call to Google's Gemini API
-  
-  /* 
-  // PRODUCTION IMPLEMENTATION WOULD BE SOMETHING LIKE:
-  const apiKey = process.env.GEMINI_API_KEY;
-  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{
-          text: prompt
-        }]
-      }],
-      generationConfig: {
-        temperature: 0.2,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 1024,
+const apiKey = "AIzaSyAZn35XN5nxjiW0COUFJqG5HjNhnnnO79M";
+const genAI = new GoogleGenerativeAI(apiKey);
+
+const model = genAI.getGenerativeModel({
+  model: "gemini-2.5-pro-preview-03-25",
+  systemInstruction: `
+You are a medical diagnosis assistant. Based on the symptoms provided by the user, your job is to:
+
+1. Identify the most likely medical condition (diagnosis).
+2. List common or probable causes.
+3. Suggest steps the user can take for relief or treatment.
+4. Assign a risk level (Low, Medium, High, Undetermined).
+5. Indicate whether a follow-up with a medical professional is necessary.
+6. Include additional notes with warnings or context, if needed.
+
+Always be informative but never replace a real doctor's advice. Be cautious with severe symptoms and ensure safety of the user comes first.
+  `.trim(),
+});
+
+const generationConfig = {
+  temperature: 0.8,
+  topP: 0.95,
+  topK: 64,
+  maxOutputTokens: 2048,
+  responseMimeType: "application/json",
+  responseSchema: {
+    type: "object",
+    properties: {
+      diagnosis: {
+        type: "string",
+        description: "The primary medical condition suspected based on the symptoms."
+      },
+      causes: {
+        type: "array",
+        description: "Possible underlying causes for the diagnosis.",
+        items: { type: "string" }
+      },
+      suggestions: {
+        type: "array",
+        description: "Recommended actions, treatments, or care practices for the condition.",
+        items: { type: "string" }
+      },
+      risk_level: {
+        type: "string",
+        enum: ["Low", "Medium", "High", "Undetermined"],
+        description: "Severity or urgency associated with the diagnosis."
+      },
+      followup_needed: {
+        type: "boolean",
+        description: "Indicates whether a medical follow-up or consultation is necessary."
+      },
+      additional_notes: {
+        type: "string",
+        description: "Any extra guidance, disclaimers, or contextual insights."
       }
-    })
+    },
+    required: [
+      "diagnosis",
+      "causes",
+      "suggestions",
+      "risk_level",
+      "followup_needed",
+      "additional_notes"
+    ]
+  },
+};
+
+export const callGeminiAPI = async (prompt: string): Promise<DiagnosisResult> => {
+  const chat = model.startChat({
+    generationConfig,
+    history: [],
   });
-  
-  const data = await response.json();
-  return JSON.parse(data.candidates[0].content.parts[0].text);
-  */
-  
-  if (prompt.toLowerCase().includes("headache") || prompt.toLowerCase().includes("pain")) {
-    return {
-      diagnosis: "Possible Tension Headache",
-      causes: [
-        "Stress and anxiety",
-        "Poor posture",
-        "Dehydration",
-        "Eye strain",
-        "Lack of sleep"
-      ],
-      suggestions: [
-        "Rest in a quiet, dark room",
-        "Apply a cold or warm compress to your head",
-        "Stay hydrated",
-        "Consider over-the-counter pain relievers like ibuprofen",
-        "Practice stress reduction techniques"
-      ],
-      risk_level: "Low",
-      followup_needed: false,
-      additional_notes: "If headaches persist for more than 3 days or increase in severity, please consult a healthcare professional."
-    };
-  } else if (prompt.toLowerCase().includes("cough") || prompt.toLowerCase().includes("cold")) {
-    return {
-      diagnosis: "Common Cold",
-      causes: [
-        "Rhinovirus infection",
-        "Seasonal virus exposure",
-        "Weakened immune system"
-      ],
-      suggestions: [
-        "Rest and stay hydrated",
-        "Over-the-counter cold medications may help with symptoms",
-        "Use a humidifier to ease congestion",
-        "Gargle salt water for sore throat"
-      ],
-      risk_level: "Low",
-      followup_needed: false,
-      additional_notes: "See a doctor if symptoms worsen after 7-10 days or if you develop high fever, severe sore throat, or difficulty breathing."
-    };
-  } else if (prompt.toLowerCase().includes("stomach") || prompt.toLowerCase().includes("nausea")) {
-    return {
-      diagnosis: "Possible Gastroenteritis",
-      causes: [
-        "Viral infection",
-        "Food poisoning",
-        "Bacteria or parasites",
-        "Food intolerance"
-      ],
-      suggestions: [
-        "Stay hydrated with small sips of clear fluids",
-        "Avoid solid foods until nausea subsides",
-        "Gradual return to bland foods like toast or rice",
-        "Over-the-counter anti-nausea medications may help"
-      ],
-      risk_level: "Medium",
-      followup_needed: true,
-      additional_notes: "Seek medical attention if symptoms persist more than 48 hours, if you have severe abdominal pain, high fever, or signs of dehydration."
-    };
-  } else {
-    return {
-      diagnosis: "Insufficient Information",
-      causes: ["Unable to determine with provided symptoms"],
-      suggestions: [
-        "Please provide more detailed symptoms",
-        "Consider tracking when symptoms occur",
-        "Note if any activities or foods trigger symptoms"
-      ],
-      risk_level: "Undetermined",
-      followup_needed: true,
-      additional_notes: "For accurate diagnosis, please provide specific symptoms including duration, intensity, and any triggers."
-    };
+
+  const result = await chat.sendMessage(prompt);
+  const candidates = result.response?.candidates || [];
+
+  const jsonOutput = candidates
+    .map((c) => c.content.parts?.[0]?.text)
+    .find((t) => t && t.trim().startsWith("{"));
+
+  if (!jsonOutput) {
+    throw new Error("Gemini response did not contain valid JSON output.");
+  }
+
+  try {
+    return JSON.parse(jsonOutput);
+  } catch (err) {
+    console.error("Failed to parse Gemini response:", jsonOutput);
+    throw err;
   }
 };
