@@ -1,8 +1,6 @@
 
 import { PageHeader } from "./PageHeader";
 import { ReactNode } from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -20,8 +18,6 @@ export function MainLayout({ children }: MainLayoutProps) {
           &copy; {new Date().getFullYear()} MediChain AI Vault. All rights reserved.
         </div>
       </footer>
-      <Toaster />
-      <SonnerToaster />
     </div>
   );
 }
