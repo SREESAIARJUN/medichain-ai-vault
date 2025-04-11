@@ -36,53 +36,56 @@ const generationConfig = {
   topK: 64,
   maxOutputTokens: 2048,
   responseMimeType: "application/json",
-  responseSchema: {
-    type: SchemaType.OBJECT,
-    properties: {
-      diagnosis: {
-        type: SchemaType.STRING,
-        description: "The primary medical condition suspected based on the symptoms."
-      },
-      causes: {
-        type: SchemaType.ARRAY,
-        description: "Possible underlying causes for the diagnosis.",
-        items: { type: SchemaType.STRING }
-      },
-      suggestions: {
-        type: SchemaType.ARRAY,
-        description: "Recommended actions, treatments, or care practices for the condition.",
-        items: { type: SchemaType.STRING }
-      },
-      risk_level: {
-        type: SchemaType.STRING,
-        enum: ["Low", "Medium", "High", "Undetermined"],
-        description: "Severity or urgency associated with the diagnosis."
-      },
-      followup_needed: {
-        type: SchemaType.BOOLEAN,
-        description: "Indicates whether a medical follow-up or consultation is necessary."
-      },
-      additional_notes: {
-        type: SchemaType.STRING,
-        description: "Any extra guidance, disclaimers, or contextual insights."
-      }
+};
+
+// Define the schema for structured response
+const responseSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    diagnosis: {
+      type: SchemaType.STRING,
+      description: "The primary medical condition suspected based on the symptoms."
     },
-    required: [
-      "diagnosis",
-      "causes",
-      "suggestions",
-      "risk_level",
-      "followup_needed",
-      "additional_notes"
-    ]
+    causes: {
+      type: SchemaType.ARRAY,
+      description: "Possible underlying causes for the diagnosis.",
+      items: { type: SchemaType.STRING }
+    },
+    suggestions: {
+      type: SchemaType.ARRAY,
+      description: "Recommended actions, treatments, or care practices for the condition.",
+      items: { type: SchemaType.STRING }
+    },
+    risk_level: {
+      type: SchemaType.STRING,
+      enum: ["Low", "Medium", "High", "Undetermined"],
+      description: "Severity or urgency associated with the diagnosis."
+    },
+    followup_needed: {
+      type: SchemaType.BOOLEAN,
+      description: "Indicates whether a medical follow-up or consultation is necessary."
+    },
+    additional_notes: {
+      type: SchemaType.STRING,
+      description: "Any extra guidance, disclaimers, or contextual insights."
+    }
   },
+  required: [
+    "diagnosis",
+    "causes",
+    "suggestions",
+    "risk_level",
+    "followup_needed",
+    "additional_notes"
+  ]
 };
 
 export const callGeminiAPI = async (prompt: string): Promise<DiagnosisResult> => {
   try {
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig
+      generationConfig,
+      responseSchema
     });
     
     const response = result.response;
