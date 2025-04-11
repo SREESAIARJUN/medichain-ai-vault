@@ -9,7 +9,7 @@ interface DiagnosisResult {
 
 export const callGeminiAPI = async (prompt: string): Promise<DiagnosisResult> => {
   try {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY; // Make sure this is defined in your .env file
+    const apiKey = "AIzaSyAZn35XN5nxjiW0COUFJqG5HjNhnnnO79M"; // Make sure this is defined in your .env file
 
     const response = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
