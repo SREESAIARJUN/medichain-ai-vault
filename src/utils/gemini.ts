@@ -1,5 +1,5 @@
 
-import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
+import { GoogleGenerativeAI, GenerativeModel, SchemaType } from "@google/generative-ai";
 
 export interface DiagnosisResult {
   diagnosis: string;
@@ -37,33 +37,33 @@ const generationConfig = {
   maxOutputTokens: 2048,
   responseMimeType: "application/json",
   responseSchema: {
-    type: "object",
+    type: SchemaType.OBJECT,
     properties: {
       diagnosis: {
-        type: "string",
+        type: SchemaType.STRING,
         description: "The primary medical condition suspected based on the symptoms."
       },
       causes: {
-        type: "array",
+        type: SchemaType.ARRAY,
         description: "Possible underlying causes for the diagnosis.",
-        items: { type: "string" }
+        items: { type: SchemaType.STRING }
       },
       suggestions: {
-        type: "array",
+        type: SchemaType.ARRAY,
         description: "Recommended actions, treatments, or care practices for the condition.",
-        items: { type: "string" }
+        items: { type: SchemaType.STRING }
       },
       risk_level: {
-        type: "string",
+        type: SchemaType.STRING,
         enum: ["Low", "Medium", "High", "Undetermined"],
         description: "Severity or urgency associated with the diagnosis."
       },
       followup_needed: {
-        type: "boolean",
+        type: SchemaType.BOOLEAN,
         description: "Indicates whether a medical follow-up or consultation is necessary."
       },
       additional_notes: {
-        type: "string",
+        type: SchemaType.STRING,
         description: "Any extra guidance, disclaimers, or contextual insights."
       }
     },
